@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"flag"
 	"log"
 	"os"
@@ -9,6 +10,8 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/quicksight"
+	"github.com/aws/aws-sdk-go-v2/service/quicksight/types"
+	"github.com/aws/smithy-go"
 )
 
 func main() {
@@ -48,15 +51,26 @@ func main() {
 		os.Exit(1)
 	}
 
-	// TODO
-	// describeDataSetRefreshPropertiesOutput, err := client.DescribeDataSetRefreshProperties(ctx, &quicksight.DescribeDataSetRefreshPropertiesInput{
-	// 	AwsAccountId: accountID,
-	// 	DataSetId:    srcID,
-	// })
-	// if err != nil {
-	// 	log.Printf("unable to describe data set refresh properties, %v", err)
-	// 	os.Exit(1)
-	// }
+	describeDataSetRefreshPropertiesOutput, err := client.DescribeDataSetRefreshProperties(ctx, &quicksight.DescribeDataSetRefreshPropertiesInput{
+		AwsAccountId: accountID,
+		DataSetId:    srcID,
+	})
+	if err != nil {
+		isResourceNotFoundException := func() bool {
+			var apiErr smithy.APIError
+			if errors.As(err, &apiErr) {
+				if _, ok := apiErr.(*types.ResourceNotFoundException); ok {
+					return true
+				}
+			}
+			return false
+		}()
+
+		if !isResourceNotFoundException {
+			log.Printf("unable to describe data set refresh properties, %v", err)
+			os.Exit(1)
+		}
+	}
 
 	if _, err := client.CreateDataSet(ctx, &quicksight.CreateDataSetInput{
 		AwsAccountId:                       accountID,
@@ -79,13 +93,14 @@ func main() {
 		os.Exit(1)
 	}
 
-	// TODO
-	// if _, err := client.PutDataSetRefreshProperties(ctx, &quicksight.PutDataSetRefreshPropertiesInput{
-	// 	AwsAccountId:             accountID,
-	// 	DataSetId:                dstID,
-	// 	DataSetRefreshProperties: describeDataSetRefreshPropertiesOutput.DataSetRefreshProperties,
-	// }); err != nil {
-	// 	log.Printf("unable to describe data set refresh properties, %v", err)
-	// 	os.Exit(1)
-	// }
+	if describeDataSetRefreshPropertiesOutput != nil {
+		if _, err := client.PutDataSetRefreshProperties(ctx, &quicksight.PutDataSetRefreshPropertiesInput{
+			AwsAccountId:             accountID,
+			DataSetId:                dstID,
+			DataSetRefreshProperties: describeDataSetRefreshPropertiesOutput.DataSetRefreshProperties,
+		}); err != nil {
+			log.Printf("unable to describe data set refresh properties, %v", err)
+			os.Exit(1)
+		}
+	}
 }
