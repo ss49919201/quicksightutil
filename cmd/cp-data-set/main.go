@@ -56,6 +56,7 @@ func main() {
 		DataSetId:    srcID,
 	})
 	if err != nil {
+		// cf. https://github.com/aws/aws-sdk-go-v2/issues/1110
 		isResourceNotFoundException := func() bool {
 			var apiErr smithy.APIError
 			if errors.As(err, &apiErr) {
