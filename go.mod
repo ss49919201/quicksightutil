@@ -3,10 +3,10 @@ module github.com/ss49919201/quicksightutil
 go 1.21.0
 
 require (
-	github.com/aws/aws-sdk-go-v2 v1.21.0
+	github.com/aws/aws-sdk-go-v2 v1.23.5
 	github.com/aws/aws-sdk-go-v2/config v1.18.37
 	github.com/aws/aws-sdk-go-v2/service/quicksight v1.42.0
-	github.com/aws/smithy-go v1.14.2
+	github.com/aws/smithy-go v1.18.1
 )
 
 require (
